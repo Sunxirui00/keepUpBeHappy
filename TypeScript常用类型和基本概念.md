@@ -180,19 +180,277 @@ let tom: Person = {
 
 ## 数组的类型
 
+### 定义方式
+
 数组类型有多种定义方式，比较灵活。
 
+#### 「类型 + 方括号」来表示数组：
+
+```ts
+let fibonacci: number[] = [1, 1, 2, 3, 5];
+```
+
+联合类型与数组结合：
+
+```ts
+let fibonacci: (number | string)[] = [1, 1, 2, 3, 5];
+```
+
+声明的时候不可以跨越类型，后续对数组的操作也不可以，同样会报错。
+
+```ts
+let fibonacci: number[] = [1, 1, 2, 3, 5];
+fibonacci.push('8');
+```
+
+报错
+
+#### 数组泛型 Array Generic
+
+`Array<elemType>` 来表示数组：
+
+```ts
+let fibonacci: Array<number> = [1, 1, 2, 3, 5];
+```
+
+#### 接口表示数组
+
+```ts
+interface NumberArray {
+    [index: number]: number;
+}
+let fibonacci: NumberArray = [1, 1, 2, 3, 5];
+```
+
+`NumberArray` 表示：只要 `index` 的类型是 `number`，那么值的类型必须是 `number`。
 
 
+
+#### `any`在数组中的应用
+
+`any` 表示数组中允许出现任意类型：
+
+```ts
+let list: any[] = ['Xcat Liu', 25, { website: 'http://xcatliu.com' }];
+```
+
+
+
+#### 类数组 Array-like Object
+
+类数组不是数组类型，比如 `arguments`
+
+常见的类数组都有自己的接口定义，如 `IArguments`, `NodeList`, `HTMLCollection` 
 
 ## 函数的类型
 
+### 声明方式
 
-## 类型断言
+一个函数有输入和输出，要在 TypeScript 中对其进行约束，需要把输入和输出都考虑到
+
+#### 函数声明 Function Declaration
+
+```ts
+function sum(x: number, y: number): number {
+    return x + y;
+}
+```
+
+输入多余的（或者少于要求的）参数，不可以
+
+#### 函数表达式 Function Expression
+
+按照js的写法，声明一个匿名函数，然后赋值给一个变量，也是可以的。
+
+实际应该是这么写：
+
+```ts
+let mySum: (x: number, y: number) => number = function (x: number, y: number): number {
+    return x + y;
+};
+```
+
+这里的箭头不是ES6的箭头，ts里是函数定义的意思。
+
+左边是输入类型，需要用括号括起来，右边是输出类型。
+
+#### 用接口定义函数的形状
+
+```ts
+interface SearchFunc {
+    (source: string, subString: string): boolean;
+}
+
+let mySearch: SearchFunc;
+mySearch = function(source: string, subString: string) {
+    return source.search(subString) !== -1;
+}
+```
+
+
+
+### 可选参数`?`、参数默认值`=`、剩余参数`...`
+
+```ts
+function buildName(firstName: string, lastName?: string) {
+    if (lastName) {
+        return firstName + ' ' + lastName;
+    } else {
+        return firstName;
+    }
+}
+let tomcat = buildName('Tom', 'Cat');
+let tom = buildName('Tom');
+```
+
+如果可选参数**没有设置默认值**，就必须写在必须参数的后面。
+
+如果设置了默认值，就没有限制了。
+
+```ts
+function buildName(firstName: string = 'Tom', lastName: string) {
+    return firstName + ' ' + lastName;
+}
+let tomcat = buildName('Tom', 'Cat');
+let cat = buildName(undefined, 'Cat');		
+```
+
+剩余参数，rest参数参考ES6
+
+这里可以给剩余参数加一个数组的类型的定义，剩余参数是一个数组。
+
+```ts
+function push(array: any[], ...items: any[]) {
+    items.forEach(function(item) {
+        array.push(item);
+    });
+}
+
+let a = [];
+push(a, 1, 2, 3);
+```
+
+
+
+### 重载
+
+**重载允许一个函数接受不同数量或类型的参数时，作出不同的处理。**
+
+多态？？
+
+重复定义了多次函数 ，
+
+前几次都是函数定义，
+
+最后一次是函数实现。
+
+TypeScript 会优先从最前面的函数定义开始匹配，所以多个函数定义如果有包含关系，需要优先把精确的定义写在前面。
+
+```ts
+function reverse(x: number): number;
+function reverse(x: string): string;
+function reverse(x: number | string): number | string {
+    if (typeof x === 'number') {
+        return Number(x.toString().split('').reverse().join(''));
+    } else if (typeof x === 'string') {
+        return x.split('').reverse().join('');
+    }
+}
+```
+
+
+
+## 类型断言 Type Assertion
+
+可以用来手动指定一个值的类型
+
+语法：
+
+```ts
+<类型>值  ||  值 as 类型
+```
+
+在tsx（react的jsx语法的ts版）中必须用`as`
+
+类型断言不是类型转换，**断言成一个联合类型中不存在的类型是不允许的**
+
+用在，联合类型先指定一个类型
+
+这样就可以在我们不确定类型的时候，访问其中一种类型的属性或方法了。
+
+```ts
+function getLength(something: string | number): number {
+    if ((<string>something).length) {
+        return (<string>something).length;
+    } else {
+        return something.toString().length;
+    }
+}
+```
+
 
 
 ## 声明文件
 
+当使用第三方库时，我们需要引用它的声明文件，才能获得对应的代码补全、接口提示等功能。
+
+#### 什么是声明语句
+
+```ts
+declare var jQuery: (selector: string) => any;
+
+jQuery('#foo');
+```
+
+`declare var` 并没有真的定义一个变量，只是定义了全局变量 `jQuery` 的类型，仅仅会用于编译时的检查，在编译结果中会被删除。
+
+#### 什么是声明文件
+
+通常我们会把**声明语句**放到一个**单独的文件**（`jQuery.d.ts`）中，这就是声明文件
+
+声明文件必需以 `.d.ts` 为后缀。
+
+[全局变量的模式引入声明文件](https://ts.xcatliu.com/basics/declaration-files)
+
+还有模块导入的方式。
+
+推荐使用 `@types` 统一管理第三方库的声明文件。
+
+直接用 npm 安装对应的声明模块即可
+
+```ts
+npm install @types/jquery --save-dev
+```
+
+[声明文件检索TypeSearch]([http://microsoft.github.io/TypeSearch/](http://microsoft.github.io/TypeSearch/))
+
+#### 书写声明文件
+
+当一个第三方库没有提供声明文件时，我们就需要自己书写声明文件了。
+
+[书写声明文件](https://ts.xcatliu.com/basics/declaration-files#zi-dong-sheng-cheng-sheng-ming-wen-jian)
+
+#### 自动生成声明文件
+
+如果库的源码本身就是由 ts 写的，那么在使用 `tsc` 脚本将 ts 编译为 js 的时候，添加 `declaration` 选项，就可以同时也生成 `.d.ts` 声明文件了。
+
+我们可以在命令行中添加 `--declaration`（简写 `-d`），或者在 `tsconfig.json` 中添加 `declaration` 选项。
+
+
 
 ## 内置对象
+
+内置对象是指根据标准在全局作用域（Global）上存在的对象。
+
+标准有ECMAScript 和浏览器环境的DOM&BOM标准。
+
+ECMAScript 标准提供的内置对象有：
+
+`Boolean`、`Error`、`Date`、`RegExp` 等。
+
+DOM 和 BOM 提供的内置对象有：
+
+`Document`、`HTMLElement`、`Event`、`NodeList` 等。
+
+Node.js 不是内置对象的一部分，如果想用 TypeScript 写 Node.js，则需要引入第三方声明文件。
 
