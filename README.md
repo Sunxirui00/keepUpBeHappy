@@ -9,7 +9,7 @@
 2019.3.14
 
 * node基础
-* react-weui
+* react-weuigit rm --cached -r
 * story-book是啥
 * ESLint是啥
 * webpack路径
@@ -47,4 +47,3 @@ uni-app的学习和初次使用
 
 * Symbol
 
-  
