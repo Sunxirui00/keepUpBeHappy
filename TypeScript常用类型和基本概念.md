@@ -122,6 +122,8 @@ let tom: Person = {
 
 赋值的时候，变量的形状必须和接口的形状保持一致，少和多一些属性都是不行的。
 
+(但是如果是一个形参，入参只要包含必须的就行了，多了没关系)
+
 
 
 ####可选属性
@@ -258,6 +260,8 @@ function sum(x: number, y: number): number {
 
 输入多余的（或者少于要求的）参数，不可以
 
+
+
 #### 函数表达式 Function Expression
 
 按照js的写法，声明一个匿名函数，然后赋值给一个变量，也是可以的。
@@ -272,7 +276,39 @@ let mySum: (x: number, y: number) => number = function (x: number, y: number): n
 
 这里的箭头不是ES6的箭头，ts里是函数定义的意思。
 
+```ts
+// 1.主体，函数的声明
+let someFunc  => function(){}
+
+// 2.左侧的输入类型
+let someFunc: (x:number, y:number)  => function(){}
+
+// 3.右侧的输出类型
+let someFunc: (x:number, y:number)  => number = function(){}
+
+// 4.函数本体
+let someFunc: (x:number, y:number)  => number = function (x: number, y: number): number {
+    return x + y;
+};
+```
+
 左边是输入类型，需要用括号括起来，右边是输出类型。
+
+
+
+#### 函数和模板字符串` `` `结合使用
+
+一个有多个参数的函数`test`
+
+```ts
+test `hello，i'm ${oneArg}，i'm ${AnotherArg}`
+```
+
+test的第一个参数就是一个数组，由三个字符串组成`['hello, i'm , ', i'm , '']`
+
+第二、三个参数的入参，就是oneArg、AnotherArg的值
+
+
 
 #### 用接口定义函数的形状
 
