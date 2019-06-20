@@ -575,21 +575,68 @@ return (
 
 #### select标签
 
+带 `selected` 属性，选项默认被选中
+
+React 并不会使用 `selected` 属性，而是在根 `select` 标签上使用 `value` 属性
+
+这在受控组件中更便捷，因为您只需要在根标签中更新它
+
+
+
+你可以将数组传递到 `value` 属性中，以支持在 `select` 标签中选择多个选项：
+
+```jsx
+<select multiple={true} value={['B', 'C']}>
+```
+
 
 
 #### 文件input标签
 
+`<input type=“file”>` 允许用户从存储设备中选择一个或多个文件，将其上传到服务器，或通过使用 JavaScript 的 File API 进行控制。
+
+因为它的 value 只读，所以它是 React 中的一个**非受控**组件。
 
 
 #### 处理多个输入
+
+当需要处理多个 `input` 元素时，可以给每个元素添加 `name` 属性
+
+并让处理函数根据 `event.target.name` 的值选择要执行的操作
+
+```jsx
+handleInputChange (e) {
+  const name = e.target.name;
+  const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+
+  this.setState({
+    [name]: value
+  })
+}
+```
 
 
 
 #### 受控输入空值
 
+在[受控组件](https://zh-hans.reactjs.org/docs/forms.html#controlled-components)上指定 value 的 prop 可以防止用户更改输入。
+
+如果指定了 `value`，但输入仍可编辑，则可能是意外地将`value` 设置为 `undefined` 或 `null`。
+
+```jsx
+// 指定了input的value为固定的字符串，可以防止用户更改内容
+ReactDOM.render(<input type="text" value="hi"/>, document.getElementById('root'));
+
+setTimeout(function () {
+  	// 这样就可以输入了
+    ReactDOM.render(<input type="text" value={null}/>, document.getElementById('root'))
+```
 
 
-#### 受控组件的替代
+
+#### 受控组件的替代 - 非受控组件
+
+可以 [使用 ref](https://zh-hans.reactjs.org/docs/refs-and-the-dom.html) 来从 DOM 节点中获取表单数据。
 
 
 
@@ -597,21 +644,182 @@ return (
 
 https://jaredpalmer.com/formik/
 
-## 状态提升
+
+
+### 状态提升
+
+通常，多个组件需要反映相同的变化数据，
+
+这时我们建议将共享状态提升到最近的共同父组件中去。
 
 
 
+这里兄弟组件共享父组件里面的数据，也可以改变父组件的值，是**通过调用父组件的方法**。
 
-
-## 组合&继承
-
-
+不一样的组件，传入的入参的回调不同，来区别调用的个体。
 
 
 
-## 规范和思想
+父组件的方法也是通过props传入子组件的，子组件接收到，声明一个自己的方法来接收，或者在合适的时候调用。
 
 
+
+### 组合&继承 - 代码的重用
+
+React 有十分强大的组合模式。
+
+我们推荐使用组合而非继承来实现组件间的代码重用。
+
+
+
+类似于vue的插槽，这些组件，使用`props.children`来将他们的子组件传递到渲染结果中。
+
+```jsx
+function FancyBorder(props) {
+  return (
+    <div className={'FancyBorder FancyBorder-' + props.color}>
+      <!-- 会被渲染到这里 -->
+      {props.children}
+    </div>
+  );
+}
+```
+
+
+
+```jsx
+function WelcomeDialog() {
+  return (
+    <FancyBorder color="blue">
+      <!-- 这里的内容 - start -->
+      <h1 className="Dialog-title">
+        Welcome
+      </h1>
+      <p className="Dialog-message">
+        Thank you for visiting our spacecraft!
+      </p>
+      <!-- 这里的内容 - end -->
+    </FancyBorder>
+  );
+}
+```
+
+
+
+`<FancyBorder>` JSX 标签中的所有内容都会作为一个 `children` prop 传递给 `FancyBorder`组件。
+
+因为 `FancyBorder` 将 `{props.children}` 渲染在一个 `<div>` 中，
+
+被传递的这些子组件最终都会出现在输出结果中。
+
+
+
+少数情况下，你可能需要在一个组件中预留出**几个“洞”**。
+
+这种情况下，我们可以不使用 `children`，
+
+而是自行约定：将所需内容传入 props，并使用相应的 prop。
+
+
+
+```jsx
+function SplitPane(props) {
+  return (
+    <div className="SplitPane">
+      <div className="SplitPane-left">
+        {props.left}
+      </div>
+      <div className="SplitPane-right">
+        {props.right}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <!-- 使用标签特性预留了2个“洞” -->
+    <SplitPane
+      left={
+        <Contacts />
+      }
+      right={
+        <Chat />
+      } />
+  );
+}
+```
+
+`<Contacts />` 和 `<Chat />` 之类的 React 元素本质就是对象（object），
+
+所以你可以把它们当作 props，像其他数据一样传递。
+
+
+
+这种方法可能使你想起别的库中“槽”（slot）的概念，
+
+但在 React 中没有“槽”这一概念的限制，你可以将任何东西作为 props 进行传递。
+
+
+
+#### 组件的特殊实例
+
+“特殊”组件可以通过 props 定制并渲染“一般”组件：
+
+```jsx
+function Dialog(props) { // 一般组件
+  return (
+    <FancyBorder color="blue">
+      <h1 className="Dialog-title">
+        {props.title}
+      </h1>
+      <p className="Dialog-message">
+        {props.message}
+      </p>
+    </FancyBorder>
+  );
+}
+
+function WelcomeDialog() { // 特殊组件，又包了一层
+  return (
+    <Dialog
+      title="Welcome"
+      message="Thank you for visiting our spacecraft!" />
+  );
+}
+```
+
+
+
+#### 继承
+
+如果你想要在组件间复用非 UI 的功能，我们建议将其提取为一个单独的 JavaScript 模块，如函数、对象或者类。
+
+组件可以直接引入（import）而无需通过 extend 继承它们。
+
+
+
+如果是复用UI功能，Props和组合就够了。
+
+
+
+### 规范和思想
+
+一个组件原则上只能负责一个功能。
+
+如果它需要负责更多的功能，这时候就应该考虑将它拆分成更小的组件。
+
+
+
+在拿到设计图的时候，就要给组件划分层级了。
+
+
+
+大页面，从下往上写；小页面，从上往下写。
+
+
+
+静态页面和动态交互分开写。
 
 
 
