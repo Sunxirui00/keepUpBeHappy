@@ -823,6 +823,47 @@ function WelcomeDialog() { // 特殊组件，又包了一层
 
 
 
+#### state和props的区别
+
+**state**：使你的 UI 具备交互功能，需要有触发基础数据模型改变的能力
+
+**props**:  是父组件向子组件传递数据的方式
+
+
+
+通过问自己以下三个问题，你可以逐个检查相应数据是否属于 state：
+
+1. 该数据是否是由父组件通过 props 传递而来的？如果是，那它应该不是 state。
+2. 该数据是否随时间的推移而保持不变？如果是，那它应该也不是 state。
+3. 你能否根据其他 state 或 props 计算出该数据的值？如果是，那它也不是 state。
+
+#### 确定 state 放置的位置
+
+对于应用中的每一个 state：
+
+- 找到根据这个 state 进行渲染的**所有组件**。
+- 找到他们的**共同所有者**（common owner）组件（在组件层级上高于所有需要该 state 的组件）。
+- 该共同所有者组件或者比它层级更高的组件应该拥有该 state。
+- **如果你找不到一个合适的位置来存放该 state，就可以直接创建一个新的组件来存放该 state，并将这一新组件置于高于共同所有者组件层级的位置。**
+
+
+
+就官方的例子来分析，有2个state，一个是**过滤词**`filterText`一个是**是否有库存**`inStockOnly`
+
+然后要思考2件事儿，一是放在哪个组件里，二是交互，谁来改变他们
+
+一 - 位置：
+
+搜索框要用，列表过滤也要用，就放在他们的父组件里。
+
+二 - 交互：
+
+用户是在搜索框里输入过滤词`filterText`，点选单选按钮来选择是否有库存`inStockOnly`，交互都发生在搜索组件。
+
+使用props传递一个回调给搜索框，触发父组件里面的方法来改变state。
+
+
+
 ## 进阶
 
 
@@ -830,3 +871,224 @@ function WelcomeDialog() { // 特殊组件，又包了一层
 
 
 ## Hook
+
+###概述
+
+**什么时候我会用 Hook？** 如果你在编写函数组件并意识到需要向其添加一些 state，以前的做法是必须将其它转化为 class。
+
+现在你可以在现有的函数组件中使用 Hook。
+
+
+
+###[State Hook](https://zh-hans.reactjs.org/docs/hooks-state.html)
+
+以前如果想声明一个state就要把函数换成类
+
+现在我们可以在函数里声明state了
+
+三个要点：
+
+声明：
+
+````jsx
+import React, { useState } from 'react';
+
+function Example () {
+	// 声明一个叫 “count” 的 state 变量
+	const [count, setCount] = useState(0)
+}
+````
+
+访问：
+
+```jsx
+<p>{count}</p>
+```
+
+更新：
+
+```jsx
+<button onClick={() => setCount(count + 1)}>Click</button>
+```
+
+
+
+###[Effect Hook](https://zh-hans.reactjs.org/docs/hooks-effect.html)
+
+数据获取（初始化的一些数据：Ajax，new Class之类的，就是在页面初始化、销毁、更新的时候会做的一些事情），设置订阅（事件）以及手动更改 React 组件（操作DOM）中的 DOM 都属于副作用。
+
+
+
+#### 需要清除的effect和不需要清除的effect
+
+有时候，我们只想**在 React 更新 DOM 之后运行一些额外的代码。**
+
+比如发送网络请求，手动变更 DOM，记录日志，这些都是常见的无需清除的操作。
+
+因为我们在执行完这些操作之后，就可以忽略他们了。
+
+
+
+**useEffect 做了什么？** 
+
+通过使用这个 Hook，你可以告诉 React 组件需要在**渲染后执行某些操作**。
+
+**React 会保存你传递的函数（我们将它称之为 “effect”），并且在执行 DOM 更新之后调用它。**
+
+在这个 effect 中，我们设置了 document 的 title 属性，不过我们也可以执行数据获取或调用其他命令式的 API。
+
+
+
+**为什么在组件内部调用 useEffect？**
+
+ **将 `useEffect` 放在组件内部让我们可以在 effect 中直接访问 `count` state 变量（或其他 props）。**
+
+我们不需要特殊的 API 来读取它 —— 它已经保存在函数作用域中。
+
+Hook 使用了 JavaScript 的闭包机制，而不用在 JavaScript 已经提供了解决方案的情况下，还引入特定的 React API。
+
+**useEffect 会在每次渲染后都执行吗？
+
+ 是的，默认情况下，它在第一次渲染之后*和*每次更新**之后**都会执行。
+
+
+
+与 `componentDidMount` 或 `componentDidUpdate` 不同：
+
+使用 `useEffect` 调度的 effect 不会阻塞浏览器更新屏幕，这让你的应用看起来响应更快。
+
+
+
+### Hook规则
+
+只在最顶层使用Hook，只在react函数里面调用Hook或者在自定义Hook里调用
+
+可以安装ESLint插件
+
+
+
+### 自定义Hook
+
+通过自定义 Hook，可以将组件逻辑提取到可重用的函数中。
+
+#### 提取
+
+**自定义 Hook 是一个函数，其名称以 “use” 开头，函数内部可以调用其他的 Hook。** 
+
+将变量提取为入参，将我们想获取的值，用return返回。
+
+自定义 Hook 不需要具有特殊的标识，但是它的名字应该始终以 `use` 开头
+
+#### 使用
+
+**在两个组件中使用相同的 Hook 会共享 state 吗？**不会。
+
+```jsx
+function ChatRecipientPicker() {
+  const [recipientID, setRecipientID] = useState(1);
+  // recipientID 值被传入 useFriendStatus，每次recipientID不同，获取相应的返回值
+  const isRecipientOnline = useFriendStatus(recipientID);
+
+  return (
+    <>
+      <Circle color={isRecipientOnline ? 'green' : 'red'} />
+      <select
+        value={recipientID}
+        onChange={e => setRecipientID(Number(e.target.value))}
+      >
+        {friendList.map(friend => (
+          <option key={friend.id} value={friend.id}>
+            {friend.name}
+          </option>
+        ))}
+      </select>
+    </>
+  );
+}
+```
+
+
+
+### Hook API
+
+####更新state - useState
+
+1. 如果新的state值依赖旧的值，就写成回调，回调的第一个参数就是旧值
+2. 不同于`class`类型的`setState({})`方法，是不会进行对象的合并的。所以想同时更新多个值，1. 可以使用`…`扩展运算符来达到**合并更新对象**的效果；2. `useReducer` 是另一种可选方案，它更适合用于管理包含多个子值的 state 对象。
+3. `initialState` 参数只会在组件的初始渲染中起作用，后续渲染时会被忽略。如果初始 state 需要通过复杂计算获得，则可以传入一个函数，在函数中计算并返回初始的 state，此函数只在初始渲染时被调用
+4. 调用 State Hook 的更新函数并传入当前的 state 时，React 将跳过子组件的渲染及 effect 的执行。
+
+
+
+####作用操作 - useEffect
+
+在函数组件主体内（这里指在 React 渲染阶段）改变 DOM、添加订阅、设置定时器、记录日志以及执行其他包含副作用的操作都是不被允许的，因为这可能会产生莫名其妙的 bug 并破坏 UI 的一致性。
+
+使用 `useEffect` 完成副作用操作。
+
+
+
+虽然 `useEffect` 会在浏览器绘制后延迟执行，但会保证在任何新的渲染前执行。React 将在组件更新前刷新上一轮渲染的 effect。
+
+##### 执行条件
+
+仅需要在**某些props 改变时**重新创建。
+
+要实现这一点，可以给 `useEffect` 传递第二个参数，它是 effect 所依赖的值数组。
+
+更新后的示例如下：
+
+```jsx
+useEffect(
+  () => {
+    const subscription = props.source.subscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
+  },
+  [props.source], // 这里写，只有当 props.source 改变后才会重新创建订阅。
+);
+```
+
+
+
+如果想执行只运行一次的 effect（仅在组件挂载和卸载时执行），可以传递一个空数组（`[]`）作为第二个参数。这就告诉 React 你的 effect 不依赖于 props 或 state 中的任何值，所以它永远都不需要重复执行。这并不属于特殊情况 —— 它依然遵循输入数组的工作方式。
+
+
+
+如果你传入了一个空数组（`[]`），effect 内部的 props 和 state 就会一直拥有其初始值。尽管传入 `[]` 作为第二个参数有点类似于 `componentDidMount` 和 `componentWillUnmount` 的思维模式，但我们有 [更好的](https://zh-hans.reactjs.org/docs/hooks-faq.html#is-it-safe-to-omit-functions-from-the-list-of-dependencies) [方式](https://zh-hans.reactjs.org/docs/hooks-faq.html#what-can-i-do-if-my-effect-dependencies-change-too-often) 来避免过于频繁的重复调用 effect。除此之外，请记得 React 会等待浏览器完成画面渲染之后才会延迟调用 `useEffect`，因此会使得额外操作很方便。
+
+
+
+ [`useLayoutEffect`](https://zh-hans.reactjs.org/docs/hooks-reference.html#uselayouteffect) Hook 来处理不会被延迟的 effect。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
